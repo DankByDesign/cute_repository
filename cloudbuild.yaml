@@ -5,5 +5,6 @@ steps:
   args: ['build', '-t', 'gcr.io/most-cutest-78965925/cute-repository', '.']
 - name: 'gcr.io/cloud-builders/docker'
   args: ['push', 'gcr.io/most-cutest-78965925/cute-repository']
-- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
+  entrypoint: 'gcloud'
   args: ['run', 'deploy', 'cute-repository', '--image', 'gcr.io/most-cutest-78965925/cute-repository', '--region', 'us-central1', '--platform', 'managed', '--allow-unauthenticated']
