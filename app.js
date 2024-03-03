@@ -13,20 +13,80 @@
 // limitations under the License.
 
 import express from 'express';
-import {pinoHttp, logger} from './utils/logging.js';
+import crypto from 'crypto';
+import {SecretManagerServiceClient} from '@google-cloud/secret-manager';
+import axios from 'axios';
+import {Logging} from '@google-cloud/logging';
 
 const app = express();
+const client = new SecretManagerServiceClient();
+const logging = new Logging();
 
-// Use request-based logger for log correlation
-app.use(pinoHttp);
+async function accessSecretVersion(secretName) {
+  const [version] = await client.accessSecretVersion({
+    name: `projects/YOUR_PROJECT_ID/secrets/${secretName}/versions/latest`,
+  });
 
-// Example endpoint
-app.get('/', async (req, res) => {
-  // Use basic logger without HTTP request info
-  logger.info({logField: 'custom-entry', arbitraryField: 'custom-entry'}); // Example of structured logging
-  // Use request-based logger with log correlation
-  req.log.info('Child logger with trace Id.'); // https://cloud.google.com/run/docs/logging#correlate-logs
-  res.send('Hello World!');
+  // Extract the payload as a string.
+  const payload = version.payload.data.toString('utf8');
+
+  return payload;
+}
+
+// Parse raw body
+app.use(express.json({
+  verify: (req, res, buf) => {
+    req.rawBody = buf.toString();
+  }
+}));
+
+// Your webhook endpoint
+app.post('/your-webhook-endpoint', async (req, res) => {
+  const signatureHeader = req.headers['x-kws-signature'];
+  const { t: timestamp, v1: receivedSignature } = signatureHeader.split(',').reduce((acc, part) => {
+    const [key, value] = part.split('=');
+    acc[key] = value;
+    return acc;
+  }, {});
+
+  const secretKey = await accessSecretVersion('YOUR_SECRET_NAME'); // get secret key from Google Cloud Secret Manager
+  const body = req.rawBody; // raw request body as UTF-8 string
+
+  const signature = crypto
+    .createHmac('sha256', secretKey)
+    .update(`${timestamp}.${body}`)
+    .digest('hex');
+
+  if (signature === receivedSignature) {
+    // Signature is valid, process the webhook
+    const { name, time, orgId, productId, environmentId, payload } = req.body;
+
+    // Log the request
+    const log = logging.log('my-log');
+    const metadata = {
+      resource: {type: 'global'},
+    };
+    const entry = log.entry(metadata, req.body);
+    await log.write(entry);
+
+    // Notify Unity game
+    const unityGameUrl = 'http://your-unity-game-url.com'; // replace with your Unity game's URL
+    const unityServiceAccountCredentials = await accessSecretVersion('UNITY_SERVICE_ACCOUNT_CREDENTIALS'); // get Unity service account credentials from Google Cloud Secret Manager
+    const message = { 
+      approved: true, 
+      playerId: payload.externalPayload // extract player ID from the payload
+    }; 
+    axios.post(unityGameUrl, message, {
+      headers: {
+        'Authorization': `Bearer ${unityServiceAccountCredentials}` // use Unity service account credentials for authentication
+      }
+    });
+
+    res.sendStatus(200);
+  } else {
+    // Invalid signature, respond with an error
+    res.status(403).send('Invalid signature');
+  }
 });
 
 export default app;
