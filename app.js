@@ -24,7 +24,7 @@ const logging = new Logging();
 
 async function accessSecretVersion(secretName) {
   const [version] = await client.accessSecretVersion({
-    name: `projects/YOUR_PROJECT_ID/secrets/${secretName}/versions/latest`,
+    name: `projects/450428233762/secrets/${secretName}/versions/latest`,
   });
 
   // Extract the payload as a string.
