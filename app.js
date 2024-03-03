@@ -41,7 +41,7 @@ app.use(express.json({
 }));
 
 // Your webhook endpoint
-app.post('/your-webhook-endpoint', async (req, res) => {
+app.post('/webhook-endpoint', async (req, res) => {
   const signatureHeader = req.headers['x-kws-signature'];
   const { t: timestamp, v1: receivedSignature } = signatureHeader.split(',').reduce((acc, part) => {
     const [key, value] = part.split('=');
@@ -49,7 +49,7 @@ app.post('/your-webhook-endpoint', async (req, res) => {
     return acc;
   }, {});
 
-  const secretKey = await accessSecretVersion('YOUR_SECRET_NAME'); // get secret key from Google Cloud Secret Manager
+  const secretKey = await accessSecretVersion('KWS_WEBHOOK_SECRET'); // get secret key from Google Cloud Secret Manager
   const body = req.rawBody; // raw request body as UTF-8 string
 
   const signature = crypto
