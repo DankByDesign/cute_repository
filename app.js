@@ -84,7 +84,7 @@ app.post('/webhook-endpoint', async (req, res) => {
 
     res.sendStatus(200);
   } else {
-    // Invalid signature, respond with an error
+    // Invalid signature, respond with an error please
     res.status(403).send('Invalid signature');
   }
 });
