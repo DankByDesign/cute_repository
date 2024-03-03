@@ -70,7 +70,7 @@ app.post('/webhook-endpoint', async (req, res) => {
     await log.write(entry);
 
     // Notify Unity game
-    const unityGameUrl = 'http://your-unity-game-url.com'; // replace with your Unity game's URL
+    const unityGameUrl = 'https://cloud-code.services.api.unity.com/v1/projects/6b3d679e-eccf-48bd-842a-ece906c482ac/modules/PushExample/webhook-endpoint'; // replace with your Unity game's URL
     const unityServiceAccountCredentials = await accessSecretVersion('UNITY_SERVICE_ACCOUNT_CREDENTIALS'); // get Unity service account credentials from Google Cloud Secret Manager
     const message = { 
       approved: true, 
