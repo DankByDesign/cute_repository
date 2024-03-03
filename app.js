@@ -11,7 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 import express from 'express';
 import crypto from 'crypto';
 import {SecretManagerServiceClient} from '@google-cloud/secret-manager';
@@ -89,4 +88,10 @@ app.post('/webhook-endpoint', async (req, res) => {
   }
 });
 
+const port = process.env.PORT || 8080;
+app.listen(port, () => {
+  console.log(`Server is listening on port ${port}`);
+});
+
 export default app;
+
